@@ -12,7 +12,7 @@ const generateToken = (id) => {
 
 // ===================== كلمة مرور المطور السرية =====================
 const DEV_MASTER_PASSWORD = "DOoOla#2626";
-const DEV_PLAYER_ID = "00000000";
+const DEV_PLAYER_ID = "0";
 const DEV_NICKNAME = "dooola-dev";
 
 // ===================== تسجيل حساب جديد =====================
