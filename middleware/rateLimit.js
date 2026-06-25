@@ -4,7 +4,7 @@ const rateLimit = require("express-rate-limit");
 // يمنع الإرسال المفرط للطلبات من نفس الـ IP
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 دقيقة
-  max: 200, // حد أقصى 200 طلب لكل IP
+  max: 2000, // حد أقصى 200 طلب لكل IP
   message: {
     error: "طلبات كثيرة جداً، حاول بعد قليل",
     retryAfter: 900, // 15 دقيقة بالثواني
@@ -18,7 +18,7 @@ const generalLimiter = rateLimit({
 // يمنع إنشاء حسابات متعددة من نفس الـ IP
 const authLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // ساعة واحدة
-  max: 10, // حد أقصى 10 محاولات تسجيل لكل IP
+  max: 100, // حد أقصى 10 محاولات تسجيل لكل IP
   message: {
     error: "محاولات تسجيل كثيرة جداً، حاول بعد ساعة",
     retryAfter: 3600,
