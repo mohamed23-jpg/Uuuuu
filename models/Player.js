@@ -3,21 +3,62 @@ const mongoose = require("mongoose");
 const playerSchema = new mongoose.Schema(
   {
     // الهوية الأساسية
-    playerId: { type: String, unique: true, required: true },
-    nickname: { type: String, required: true, trim: true, minlength: 3, maxlength: 20 },
-    passwordHash: { type: String, default: null },
-    avatar: { type: String, default: "spy" },
-    customAvatar: { type: String, default: null },
+    playerId: {
+      type: String,
+      unique: true,
+      required: true,
+    },
+    nickname: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 3,
+      maxlength: 20,
+    },
+    passwordHash: {
+      type: String,
+      default: null,
+    },
+    avatar: {
+      type: String,
+      default: "spy",
+    },
+    customAvatar: {
+      type: String,
+      default: null,
+    },
 
     // المستوى والتقدم
-    level: { type: Number, default: 1, min: 1, max: 100 },
-    xp: { type: Number, default: 0, min: 0 },
-    coins: { type: Number, default: 0, min: 0 },
-    title: { type: String, default: "مبتدئ" },
-    activeTitle: { type: String, default: "مبتدئ" },
+    level: {
+      type: Number,
+      default: 1,
+      min: 1,
+      max: 100,
+    },
+    xp: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    coins: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    title: {
+      type: String,
+      default: "مبتدئ",
+    },
+    activeTitle: {
+      type: String,
+      default: "مبتدئ",
+    },
 
     // المطور
-    isDev: { type: Boolean, default: false },
+    isDev: {
+      type: Boolean,
+      default: false,
+    },
 
     // الأصدقاء
     friends: [{ type: String }],
@@ -31,14 +72,34 @@ const playerSchema = new mongoose.Schema(
     ],
     blockedPlayers: [{ type: String }],
     pinnedFriends: [{ type: String }],
-    maxFriends: { type: Number, default: 30 },
-    maxPins: { type: Number, default: 1 },
+    maxFriends: {
+      type: Number,
+      default: 30,
+    },
+    maxPins: {
+      type: Number,
+      default: 1,
+    },
 
     // المخزون
     inventory: {
-      cardSkins: [{ skinId: String, equipped: Boolean }],
-      nameFrames: [{ frameId: String, equipped: Boolean }],
+      cardSkins: [
+        {
+          skinId: String,
+          equipped: Boolean,
+        },
+      ],
+      nameFrames: [
+        {
+          frameId: String,
+          equipped: Boolean,
+        },
+      ],
       unlockedTitles: [{ type: String }],
+      // حزم الأفاتارات التي اشتراها اللاعب (معرفات العناصر)
+      customAvatarItems: [{ type: String }],
+      // أنواع الأفاتارات المتاحة للاستخدام (أسماء الملفات)
+      availableAvatars: [{ type: String }],
     },
 
     // الإعدادات
@@ -61,7 +122,7 @@ const playerSchema = new mongoose.Schema(
       chatMessages: { type: Number, default: 0 },
     },
 
-    // المهام اليومية والأسبوعية
+    // المهام
     missions: {
       daily: {
         resetAt: { type: Date, default: null },
@@ -92,8 +153,16 @@ const playerSchema = new mongoose.Schema(
     },
 
     // الكلان
-    clanId: { type: mongoose.Schema.Types.ObjectId, ref: "Clan", default: null },
-    clanRole: { type: String, enum: ["member", "officer", "leader"], default: "member" },
+    clanId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Clan",
+      default: null,
+    },
+    clanRole: {
+      type: String,
+      enum: ["member", "officer", "leader"],
+      default: "member",
+    },
 
     // الحالة
     isOnline: { type: Boolean, default: false },
@@ -104,12 +173,16 @@ const playerSchema = new mongoose.Schema(
     // المصادقة
     token: { type: String, default: null },
 
-    // الحظر (إضافة حقل isBanned و banReason)
+    // الحظر
     isBanned: { type: Boolean, default: false },
     banReason: { type: String, default: "" },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
+
+// ===================== دوال مساعدة =====================
 
 // توليد ID فريد يبدأ بـ 238
 playerSchema.statics.generatePlayerId = async function () {
@@ -183,6 +256,43 @@ playerSchema.methods.getTitleByLevel = function () {
   if (this.level >= 20) return "محترف";
   if (this.level >= 10) return "متعلم";
   return "مبتدئ";
+};
+
+// ===================== دوال إضافية للأفاتارات =====================
+
+// التحقق من توفر أفاتار معين
+playerSchema.methods.hasAvatar = function (avatarType) {
+  // الأفاتارات الأساسية متاحة دائماً
+  const basicAvatars = ["spy", "detective", "manager", "samurai", "mafia", "spy_f", "ninja", "alien"];
+  if (basicAvatars.includes(avatarType)) return true;
+
+  // الأفاتارات المدفوعة
+  if (this.inventory.availableAvatars && this.inventory.availableAvatars.includes(avatarType)) {
+    return true;
+  }
+
+  return false;
+};
+
+// إضافة أفاتار جديد للمخزون
+playerSchema.methods.addAvatar = function (avatarType) {
+  if (!this.inventory.availableAvatars) {
+    this.inventory.availableAvatars = [];
+  }
+  if (!this.inventory.availableAvatars.includes(avatarType)) {
+    this.inventory.availableAvatars.push(avatarType);
+    return true;
+  }
+  return false;
+};
+
+// تعيين الأفاتار الحالي
+playerSchema.methods.setAvatar = function (avatarType) {
+  if (this.hasAvatar(avatarType)) {
+    this.avatar = avatarType;
+    return true;
+  }
+  return false;
 };
 
 module.exports = mongoose.model("Player", playerSchema);
