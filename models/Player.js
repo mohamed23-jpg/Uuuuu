@@ -20,10 +20,10 @@ const playerSchema = new mongoose.Schema(
     isDev: { type: Boolean, default: false },
 
     // الأصدقاء
-    friends: [{ type: String }], // قائمة playerIds
+    friends: [{ type: String }],
     friendRequests: [
       {
-        from: String, // playerId
+        from: String,
         nickname: String,
         avatar: String,
         sentAt: { type: Date, default: Date.now },
@@ -61,7 +61,7 @@ const playerSchema = new mongoose.Schema(
       chatMessages: { type: Number, default: 0 },
     },
 
-    // المهام
+    // المهام اليومية والأسبوعية
     missions: {
       daily: {
         resetAt: { type: Date, default: null },
@@ -69,7 +69,12 @@ const playerSchema = new mongoose.Schema(
         hints: { type: Number, default: 0 },
         correctGuesses: { type: Number, default: 0 },
         chatMessages: { type: Number, default: 0 },
-        claimed: { wins: Boolean, hints: Boolean, correctGuesses: Boolean, chatMessages: Boolean },
+        claimed: {
+          wins: { type: Boolean, default: false },
+          hints: { type: Boolean, default: false },
+          correctGuesses: { type: Boolean, default: false },
+          chatMessages: { type: Boolean, default: false },
+        },
       },
       weekly: {
         resetAt: { type: Date, default: null },
@@ -78,10 +83,10 @@ const playerSchema = new mongoose.Schema(
         duoGames: { type: Number, default: 0 },
         blackAvoided: { type: Number, default: 0 },
         claimed: {
-          wins: Boolean,
-          spymasterWins: Boolean,
-          duoGames: Boolean,
-          blackAvoided: Boolean,
+          wins: { type: Boolean, default: false },
+          spymasterWins: { type: Boolean, default: false },
+          duoGames: { type: Boolean, default: false },
+          blackAvoided: { type: Boolean, default: false },
         },
       },
     },
@@ -98,6 +103,10 @@ const playerSchema = new mongoose.Schema(
 
     // المصادقة
     token: { type: String, default: null },
+
+    // الحظر (إضافة حقل isBanned و banReason)
+    isBanned: { type: Boolean, default: false },
+    banReason: { type: String, default: "" },
   },
   { timestamps: true }
 );
@@ -150,9 +159,12 @@ playerSchema.methods.addXP = async function (amount) {
     }
 
     // تحديث اللقب
-    this.title = this.getTitleByLevel();
-    if (!this.inventory.unlockedTitles.includes(this.title)) {
-      this.inventory.unlockedTitles.push(this.title);
+    const newTitle = this.getTitleByLevel();
+    if (newTitle !== this.title) {
+      this.title = newTitle;
+      if (!this.inventory.unlockedTitles.includes(newTitle)) {
+        this.inventory.unlockedTitles.push(newTitle);
+      }
     }
   }
 
